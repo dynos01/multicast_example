@@ -17,7 +17,6 @@ const IPV6_MULTICAST_ADDR: &'static str = "ff12:114:514:1919::810";
 const PORT: u16 = 5679;
 
 static THIS_NODE: OnceCell<Node> = OnceCell::new();
-static INTERFACE: OnceCell<String> = OnceCell::new();
 
 #[derive(Serialize, Deserialize, Hash, Eq, PartialEq)]
 struct Node {
@@ -64,8 +63,6 @@ async fn main() -> Result<()> {
         name: args[1].clone(),
     });
 
-    INTERFACE.get_or_init(|| args[2].clone());
-
     let mut futures = FuturesUnordered::new();
 
     futures.push(tokio::spawn(async move {
@@ -74,7 +71,7 @@ async fn main() -> Result<()> {
     }));
 
     for interface in datalink::interfaces() {
-        if interface.name != *INTERFACE.wait() {
+        if interface.name != args[2] {
             continue;
         }
 
