@@ -12,7 +12,7 @@ use serde::{Serialize, Deserialize};
 use pnet::datalink;
 use cidr_utils::cidr::Ipv6Cidr;
 
-const IPV4_MULTICAST_ADDR: &'static str = "224.114.5.14";
+const IPV4_MULTICAST_ADDR: &'static str = "224.0.0.114";
 const IPV6_MULTICAST_ADDR: &'static str = "ff12:114:514:1919::810";
 const PORT: u16 = 5679;
 
