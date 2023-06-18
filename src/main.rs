@@ -1,6 +1,7 @@
 use std::{
     env,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
+    sync::Arc,
     process::exit,
 };
 
@@ -25,7 +26,7 @@ struct Node {
 
 async fn start_listener(ip: IpAddr) -> Result<()> {
     let socket = SocketAddr::new(ip, PORT);
-    let socket = UdpSocket::bind(socket).await?;
+    let socket = Arc::new(UdpSocket::bind(socket).await?);
     let multicast_ipv4_addr: Ipv4Addr = IPV4_MULTICAST_ADDR.parse()?;
     let multicast_ipv6_addr: Ipv6Addr = IPV6_MULTICAST_ADDR.parse()?;
     socket.join_multicast_v4(multicast_ipv4_addr, Ipv4Addr::UNSPECIFIED)?;
@@ -36,18 +37,23 @@ async fn start_listener(ip: IpAddr) -> Result<()> {
     loop {
         let (len, src) = socket.recv_from(&mut buf).await?;
 
-        let node: Node = match serde_json::from_slice(&buf[..len]) {
-            Ok(node) => node,
-            Err(e) => {
-                eprintln!("Failed to parse message from {src}: {e}. ");
-                continue;
-            },
-        };
+        let socket = socket.clone();
+        tokio::spawn(async move {
+            let node: Node = match serde_json::from_slice(&buf[..len]) {
+                Ok(node) => node,
+                Err(e) => {
+                    eprintln!("Failed to parse message from {src}: {e}. ");
+                    return Ok(());
+                },
+            };
 
-        println!("Got peer {} from {src}. ", node.name);
+            println!("Got peer {} from {src}. ", node.name);
 
-        let response = serde_json::to_vec(THIS_NODE.wait())?;
-        socket.send_to(&response, src).await?;
+            let response = serde_json::to_vec(THIS_NODE.wait())?;
+            socket.send_to(&response, src).await?;
+
+            Ok::<(), Error>(())
+        });
     }
 }
 
