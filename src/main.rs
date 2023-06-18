@@ -18,7 +18,7 @@ const PORT: u16 = 5679;
 
 static THIS_NODE: OnceCell<Node> = OnceCell::new();
 
-#[derive(Serialize, Deserialize, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize)]
 struct Node {
     pub name: String,
 }
